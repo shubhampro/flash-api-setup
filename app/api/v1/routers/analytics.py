@@ -11,6 +11,13 @@ from app.models.analytics import UserActivity, ItemView
 from app.models.logs import LogLevel
 from pydantic import BaseModel
 from datetime import datetime
+from app.utils.dependencies import RequestID
+from app.api.v1.schemas.response import (
+    SuccessResponse,
+    ListResponse,
+    create_success_response,
+    create_list_response
+)
 
 router = APIRouter()
 
@@ -177,8 +184,11 @@ def get_popular_items(
         raise HTTPException(status_code=500, detail="Failed to retrieve popular items")
 
 
-@router.get("/stats/summary")
-def get_analytics_summary(db: Session = Depends(get_analytics_db)):
+@router.get("/stats/summary", response_model=SuccessResponse[dict])
+def get_analytics_summary(
+    db: Session = Depends(get_analytics_db),
+    request_id: str = RequestID
+):
     """Get analytics summary statistics."""
     try:
         # Get total user activities
@@ -190,11 +200,17 @@ def get_analytics_summary(db: Session = Depends(get_analytics_db)):
         # Get popular items
         popular_items = AnalyticsService.get_popular_items(limit=5)
         
-        return {
+        summary_data = {
             "total_user_activities": total_activities,
             "total_item_views": total_views,
             "top_popular_items": popular_items
         }
+        
+        return create_success_response(
+            data=summary_data,
+            message="Analytics summary retrieved successfully",
+            request_id=request_id
+        )
     except Exception as e:
         LoggingService.log_exception(e, "analytics", "analytics", "get_analytics_summary")
         raise HTTPException(status_code=500, detail="Failed to retrieve analytics summary") 

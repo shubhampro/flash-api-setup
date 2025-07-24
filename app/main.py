@@ -7,6 +7,15 @@ from app.core.config import settings
 from app.core.version import API_VERSION
 from app.api.v1 import api_router
 from app.utils.logger import logger
+from app.utils.middleware import (
+    RequestIDMiddleware,
+    ResponseProcessingMiddleware,
+    LoggingMiddleware
+)
+from app.api.v1.schemas.response import (
+    create_success_response,
+    HealthCheckResponse
+)
 
 # Create FastAPI app instance
 app = FastAPI(
@@ -27,6 +36,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add custom middleware
+app.add_middleware(LoggingMiddleware)
+app.add_middleware(ResponseProcessingMiddleware)
+app.add_middleware(RequestIDMiddleware)
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -43,18 +57,28 @@ async def shutdown_event():
 @app.get("/")
 async def root():
     """Root endpoint."""
-    return {
-        "message": "Welcome to FastAPI Production App with Multiple MySQL Databases",
-        "version": API_VERSION,
-        "docs": f"/api/{API_VERSION}/docs",
-        "databases": ["main", "analytics", "logs"]
-    }
+    return create_success_response(
+        data={
+            "message": "Welcome to FastAPI Production App with Multiple MySQL Databases",
+            "version": API_VERSION,
+            "docs": f"/api/{API_VERSION}/docs",
+            "databases": ["main", "analytics", "logs"]
+        },
+        message="API is running successfully"
+    )
 
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "version": API_VERSION}
+    return create_success_response(
+        data={
+            "status": "healthy",
+            "version": API_VERSION,
+            "databases": ["main", "analytics", "logs"]
+        },
+        message="Health check passed"
+    )
 
 
 # Include API routers
