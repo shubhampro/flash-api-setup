@@ -128,17 +128,16 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# FastAPI specific
-app.db
-test.db
+# Database
 *.db
+*.sqlite
+*.sqlite3
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
 # OS
 .DS_Store

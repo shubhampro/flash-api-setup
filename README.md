@@ -1,401 +1,208 @@
-# FastAPI Production App with Multiple MySQL Databases
+# FastAPI Multi-App Project
 
-A production-ready FastAPI application with support for multiple MySQL databases for different purposes (main application, analytics, and logs).
+A FastAPI project with multiple applications (API v1, API v2, and Admin) and shared components.
+
+## Project Structure
+
+```
+repo/
+├─ apps/
+│  ├─ api/
+│  │  ├─ v1/
+│  │  │  ├─ routers/
+│  │  │  │  ├─ users.py
+│  │  │  │  └─ auth.py
+│  │  │  └─ schemas/
+│  │  │     ├─ user_in.py
+│  │  │     └─ user_out.py
+│  │  ├─ v2/
+│  │  │  ├─ routers/
+│  │  │  │  └─ users.py
+│  │  │  └─ schemas/
+│  │  │     └─ user_out.py
+│  │  └─ app.py
+│  └─ admin/
+│     ├─ routers/
+│     │  └─ users.py
+│     └─ app.py
+├─ shared/
+│  ├─ core/
+│  │  ├─ config.py
+│  │  ├─ errors.py
+│  │  └─ security.py
+│  ├─ db/
+│  │  ├─ base.py
+│  │  ├─ session.py
+│  │  ├─ models/
+│  │  │  └─ user.py
+│  │  └─ repositories/
+│  │     └─ user_repo.py
+│  └─ services/
+│     └─ user_service.py
+├─ migrations/
+├─ tests/
+│  └─ test_users_v1.py
+├─ main.py
+├─ requirements.txt
+├─ config.env
+└─ init_db.py
+```
 
 ## Features
 
-- **Multiple MySQL Databases**: Separate databases for main application, analytics, and logs
-- **Database Connection Pooling**: Optimized connection management with configurable pool settings
-- **Analytics Tracking**: User activity and item view tracking
-- **Comprehensive Logging**: Application and API request logging with different log levels
-- **RESTful API**: Clean API design with proper error handling
-- **Production Ready**: Includes security, CORS, and performance optimizations
-
-## Database Architecture
-
-### 1. Main Database (`mono_api_main`)
-- **Purpose**: Core application data
-- **Models**: Items, Users, etc.
-- **Base Class**: `BaseModel`
-
-### 2. Analytics Database (`mono_api_analytics`)
-- **Purpose**: User behavior tracking and analytics
-- **Models**: UserActivity, ItemView
-- **Base Class**: `AnalyticsBaseModel`
-
-### 3. Logs Database (`mono_api_logs`)
-- **Purpose**: Application and API logging
-- **Models**: ApplicationLog, APILog
-- **Base Class**: `LogsBaseModel`
-
-## Prerequisites
-
-- Python 3.8+
-- MySQL 8.0+
-- pip (Python package manager)
+- **Multi-App Architecture**: Separate apps for API v1, API v2, and Admin
+- **Shared Components**: Common database models, services, and utilities
+- **JWT Authentication**: Secure token-based authentication
+- **Database Abstraction**: SQLAlchemy ORM with repository pattern
+- **Input Validation**: Pydantic schemas for request/response validation
+- **Error Handling**: Custom exception classes and HTTP error responses
+- **Testing**: Pytest-based test suite
 
 ## Installation
 
-### Quick Start (Recommended)
-
-**For macOS/Linux:**
+1. Clone the repository:
 ```bash
-# Clone the repository
 git clone <repository-url>
 cd mono-api
-
-# Run the quick start script (does everything automatically)
-./quick_start.sh
 ```
 
-**For Windows:**
+2. Create a virtual environment:
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd mono-api
-
-# Run the setup script
-setup_venv.bat
-
-# Then run the application
-uvicorn app.main:app --reload
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-### Manual Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd mono-api
-   ```
-
-2. **Set up virtual environment**
-   ```bash
-   # macOS/Linux
-   ./setup_venv.sh
-   
-   # Windows
-   setup_venv.bat
-   ```
-
-3. **Activate virtual environment**
-   ```bash
-   # macOS/Linux
-   source venv/bin/activate
-   
-   # Windows
-   venv\Scripts\activate.bat
-   ```
-
-4. **Set up MySQL databases**
-   ```sql
-   -- Connect to MySQL as root or privileged user
-   CREATE DATABASE mono_api_main;
-   CREATE DATABASE mono_api_analytics;
-   CREATE DATABASE mono_api_logs;
-   
-   -- Create user (optional, for better security)
-   CREATE USER 'mono_api_user'@'localhost' IDENTIFIED BY 'your_secure_password';
-   GRANT ALL PRIVILEGES ON mono_api_main.* TO 'mono_api_user'@'localhost';
-   GRANT ALL PRIVILEGES ON mono_api_analytics.* TO 'mono_api_user'@'localhost';
-   GRANT ALL PRIVILEGES ON mono_api_logs.* TO 'mono_api_user'@'localhost';
-   FLUSH PRIVILEGES;
-   ```
-
-5. **Configure environment variables**
-   ```bash
-   cp env.example .env
-   # Edit .env with your MySQL credentials
-   ```
-
-6. **Initialize databases**
-   ```bash
-   python -m app.db.init_db
-   ```
-
-7. **Test database connections**
-   ```bash
-   python test_connections.py
-   ```
-
-## Configuration
-
-### Environment Variables
-
-Copy `env.example` to `.env` and configure:
-
-```env
-# MySQL Database Configuration
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-MYSQL_USER=root
-MYSQL_PASSWORD=your_password_here
-MYSQL_DATABASE=mono_api_main
-
-# Analytics Database
-MYSQL_ANALYTICS_HOST=localhost
-MYSQL_ANALYTICS_PORT=3306
-MYSQL_ANALYTICS_USER=root
-MYSQL_ANALYTICS_PASSWORD=your_password_here
-MYSQL_ANALYTICS_DATABASE=mono_api_analytics
-
-# Logs Database
-MYSQL_LOGS_HOST=localhost
-MYSQL_LOGS_PORT=3306
-MYSQL_LOGS_USER=root
-MYSQL_LOGS_PASSWORD=your_password_here
-MYSQL_LOGS_DATABASE=mono_api_logs
-
-# Database Pool Settings
-DB_POOL_SIZE=10
-DB_MAX_OVERFLOW=20
-DB_POOL_TIMEOUT=30
-DB_POOL_RECYCLE=3600
-```
-
-## Usage
-
-### Available Scripts
-
-The project includes several convenience scripts to make development easier:
-
-| Script | Purpose | Platform |
-|--------|---------|----------|
-| `quick_start.sh` | Complete setup and run application | macOS/Linux |
-| `setup_venv.sh` | Create and setup virtual environment | macOS/Linux |
-| `activate_venv.sh` | Activate virtual environment | macOS/Linux |
-| `setup_venv.bat` | Create and setup virtual environment | Windows |
-| `activate_venv.bat` | Activate virtual environment | Windows |
-| `test_connections.py` | Test all database connections | All |
-
-### Running the Application
-
-**Quick Start (macOS/Linux):**
+3. Install dependencies:
 ```bash
-./quick_start.sh
+pip install -r requirements.txt
 ```
 
-**Manual Start:**
+4. Set up environment variables:
 ```bash
-# Activate virtual environment
-source venv/bin/activate  # macOS/Linux
-# or
-venv\Scripts\activate.bat  # Windows
-
-# Run the application
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Production
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+cp config.env .env
+# Edit .env with your configuration
 ```
 
-### API Documentation
+5. Initialize the database:
+```bash
+python init_db.py
+```
 
-- **Swagger UI**: http://localhost:8000/api/v1/docs
-- **ReDoc**: http://localhost:8000/api/v1/redoc
-- **OpenAPI JSON**: http://localhost:8000/api/v1/openapi.json
+## Running the Application
+
+Start the main application:
+```bash
+python main.py
+```
+
+Or use uvicorn directly:
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
 
 ## API Endpoints
 
-### Main Application (Items)
-- `GET /api/v1/items` - List items
-- `POST /api/v1/items` - Create item
-- `GET /api/v1/items/{item_id}` - Get item
-- `PUT /api/v1/items/{item_id}` - Update item
-- `DELETE /api/v1/items/{item_id}` - Delete item
+### API v1 (`/api/v1`)
+- `POST /users/` - Create user
+- `GET /users/` - Get all users
+- `GET /users/{user_id}` - Get user by ID
+- `PUT /users/{user_id}` - Update user
+- `DELETE /users/{user_id}` - Delete user
+- `POST /users/login` - User login
+- `GET /auth/me` - Get current user info
+- `POST /auth/verify` - Verify JWT token
+- `POST /auth/refresh` - Refresh access token
 
-### Analytics
-- `POST /api/v1/analytics/user-activity` - Log user activity
-- `POST /api/v1/analytics/item-view` - Log item view
-- `GET /api/v1/analytics/user-activities` - Get user activities
-- `GET /api/v1/analytics/item-views` - Get item views
-- `GET /api/v1/analytics/popular-items` - Get popular items
-- `GET /api/v1/analytics/stats/summary` - Get analytics summary
+### API v2 (`/api/v2`)
+- `GET /users/` - Get all users (enhanced)
+- `GET /users/{user_id}` - Get user by ID (enhanced)
+- `GET /users/me/profile` - Get current user profile
 
-## Code Structure
+### Admin (`/admin`)
+- `GET /users/` - Get all users (admin only)
+- `GET /users/{user_id}` - Get user by ID (admin only)
+- `PUT /users/{user_id}` - Update user (admin only)
+- `DELETE /users/{user_id}` - Delete user (admin only)
+- `POST /users/{user_id}/activate` - Activate user
+- `POST /users/{user_id}/deactivate` - Deactivate user
+- `POST /users/{user_id}/make-admin` - Grant admin privileges
+- `POST /users/{user_id}/remove-admin` - Remove admin privileges
 
-```
-mono-api/
-├── app/
-│   ├── api/v1/
-│   │   ├── routers/
-│   │   │   ├── items.py          # Main application endpoints
-│   │   │   └── analytics.py      # Analytics endpoints
-│   │   └── schemas/
-│   ├── core/
-│   │   └── config.py             # Configuration with multi-DB support
-│   ├── db/
-│   │   ├── base.py               # Multiple base classes
-│   │   ├── session.py            # Multi-DB session management
-│   │   └── init_db.py            # Database initialization
-│   ├── models/
-│   │   ├── item.py               # Main database models
-│   │   ├── analytics.py          # Analytics database models
-│   │   └── logs.py               # Logs database models
-│   ├── services/
-│   │   ├── item_service.py       # Main application service
-│   │   ├── analytics_service.py  # Analytics service
-│   │   └── logging_service.py    # Logging service
-│   └── main.py                   # FastAPI application
-├── requirements.txt              # Dependencies
-├── env.example                   # Environment variables template
-└── README.md                     # This file
+## Authentication
+
+The application uses JWT tokens for authentication. To access protected endpoints:
+
+1. Login with user credentials:
+```bash
+POST /api/v1/users/login
+{
+    "email": "user@example.com",
+    "password": "password123"
+}
 ```
 
-## Database Usage Examples
-
-### Using Different Databases in Services
-
-```python
-from app.db.session import get_main_db, get_analytics_db, get_logs_db
-from app.services.analytics_service import AnalyticsService
-from app.services.logging_service import LoggingService
-
-# Main database operations
-with next(get_main_db()) as db:
-    # Work with main database
-    pass
-
-# Analytics database operations
-AnalyticsService.log_user_activity(user_id=1, action="view_item")
-
-# Logs database operations
-LoggingService.log_application_event(
-    level=LogLevel.INFO,
-    message="User logged in",
-    logger_name="auth"
-)
+2. Use the returned access token in the Authorization header:
+```
+Authorization: Bearer <access_token>
 ```
 
-### Creating Models for Different Databases
+## Database
 
-```python
-# Main database model
-from app.db.base import BaseModel
+The application uses SQLite by default (configurable via `DATABASE_URL`). The database includes:
 
-class User(BaseModel):
-    __tablename__ = "users"
-    # ... fields
-
-# Analytics database model
-from app.db.base import AnalyticsBaseModel
-
-class UserActivity(AnalyticsBaseModel):
-    __tablename__ = "user_activities"
-    # ... fields
-
-# Logs database model
-from app.db.base import LogsBaseModel
-
-class ApplicationLog(LogsBaseModel):
-    __tablename__ = "application_logs"
-    # ... fields
-```
+- **Users table**: User accounts with authentication and profile information
+- **Repository pattern**: Clean separation between data access and business logic
+- **Service layer**: Business logic and validation
 
 ## Testing
 
+Run the test suite:
 ```bash
-# Run tests
-pytest
-
-# Run with coverage
-pytest --cov=app tests/
+pytest tests/
 ```
+
+## Configuration
+
+Key configuration options in `config.env`:
+
+- `DATABASE_URL`: Database connection string
+- `SECRET_KEY`: JWT signing key
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time
+- `ENVIRONMENT`: Application environment (development/production)
+- `DEBUG`: Debug mode flag
 
 ## Development
 
+### Adding New Endpoints
+
+1. Create schemas in the appropriate `schemas/` directory
+2. Add router logic in the appropriate `routers/` directory
+3. Include the router in the corresponding `app.py` file
+
 ### Adding New Models
 
-1. **Choose the appropriate base class**:
-   - `BaseModel` for main application data
-   - `AnalyticsBaseModel` for analytics data
-   - `LogsBaseModel` for logging data
+1. Create the model in `shared/db/models/`
+2. Add repository methods in `shared/db/repositories/`
+3. Add service methods in `shared/services/`
 
-2. **Create the model file** in `app/models/`
+### Database Migrations
 
-3. **Import in `app/models/__init__.py`**
+For production use, consider using Alembic for database migrations:
 
-4. **Update database initialization** in `app/db/init_db.py`
-
-### Adding New Services
-
-1. **Create service file** in `app/services/`
-2. **Use appropriate database session**:
-   - `get_main_db()` for main database
-   - `get_analytics_db()` for analytics database
-   - `get_logs_db()` for logs database
-
-### Adding New API Endpoints
-
-1. **Create router file** in `app/api/v1/routers/`
-2. **Import in `app/api/v1/__init__.py`**
-3. **Use appropriate database dependency**
-
-## Production Deployment
-
-### Docker Setup
-
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY . .
-EXPOSE 8000
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```bash
+alembic init migrations
+alembic revision --autogenerate -m "Initial migration"
+alembic upgrade head
 ```
 
-### Environment Variables for Production
+## Security Considerations
 
-```env
-# Production database settings
-MYSQL_HOST=your-production-mysql-host
-MYSQL_PASSWORD=your-secure-production-password
-MYSQL_ANALYTICS_HOST=your-analytics-mysql-host
-MYSQL_LOGS_HOST=your-logs-mysql-host
-
-# Security
-SECRET_KEY=your-very-secure-production-secret-key
-
-# Performance
-DB_POOL_SIZE=20
-DB_MAX_OVERFLOW=40
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Database Connection Errors**
-   - Check MySQL service is running
-   - Verify credentials in `.env`
-   - Ensure databases exist
-
-2. **Import Errors**
-   - Activate virtual environment
-   - Install dependencies: `pip install -r requirements.txt`
-
-3. **Permission Errors**
-   - Check MySQL user privileges
-   - Ensure user has access to all three databases
-
-### Logs
-
-- Application logs are stored in the logs database
-- Check `ApplicationLog` and `APILog` tables for debugging
-- Use `LoggingService` to add custom logging
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+- Change the default `SECRET_KEY` in production
+- Use strong passwords and consider password policies
+- Implement rate limiting for authentication endpoints
+- Use HTTPS in production
+- Consider implementing refresh token rotation
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the MIT License.

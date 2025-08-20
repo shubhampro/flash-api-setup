@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Simple script to run the FastAPI application.
+Simple run script for the FastAPI application
 """
+
 import uvicorn
-from app.core.config import settings
+from main import app
 
 if __name__ == "__main__":
     uvicorn.run(
-        "app.main:app",
+        "main:app",
         host="0.0.0.0",
         port=8000,
         reload=True,
-        log_level=settings.LOG_LEVEL.lower()
-    ) 
+        log_level="info"
+    )
